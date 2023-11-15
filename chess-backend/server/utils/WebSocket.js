@@ -3,21 +3,26 @@
 import GameModel from '../models/Game.js';
 
 function connection(socket) {
+    const MAX_ROOM_SIZE = 2;
+    const rooms = {};
+
+
+
     socket.on('create-game', async ({ name, game }) => {
         try {
             const newGame = await GameModel.createGame(name, game);
             // Join a room
-            socket.join(newGame.whitePlayerId);
-
+            socket.join(newGame._id);
+            rooms[roomName] = [socket.id];
             // Emitting JSON to the client
             socket.emit('game-created', {
                 success: true,
                 message: 'Game successfully created',
+                roomName: newGame._id,
                 game: newGame
             });
         } catch (error) {
             console.log(error);
-
             // Emitting an error as JSON
             socket.emit('game-created', {
                 success: false,
@@ -33,16 +38,25 @@ function connection(socket) {
     socket.on('join-game', async ({ gameId, name }) => {
         try {
             const game = await GameModel.joinGame(gameId, name);
-
+            console.log("Game Found while joining", game);
+            const roomName = game._id;
+            const room = rooms[roomName];
             // Join the game room
-            socket.join(game.whitePlayerId);
-            console.log("game joined")
+            if (room && room.length < MAX_ROOM_SIZE) {
+                socket.join(roomName);
+                room.push(socket.id);
+                console.log(`Player joined room: ${roomName}`);
+                socket.to(roomName).emit('player-joined', {
+                    success: true,
+                    message: 'Player joined successfully',
+                    roomName: roomName,
+                    game
+                });
+              } else {
+                socket.emit('roomFull');
+              }
             // Notify others in the room that a player has joined
-            socket.to(game.whitePlayerId).emit('player-joined', {
-                success: true,
-                message: 'Player joined successfully',
-                game
-            });
+            
 
         } catch (error) {
             console.log(error);
@@ -89,6 +103,22 @@ function connection(socket) {
             });
         }
     });
+
+    socket.on('disconnect', () => {
+        console.log('user disconnected');
+    
+        // Remove the disconnected player from the room
+        Object.keys(rooms).forEach((roomName) => {
+          const index = rooms[roomName].indexOf(socket.id);
+          if (index !== -1) {
+            rooms[roomName].splice(index, 1);
+            if (rooms[roomName].length === 0) {
+              delete rooms[roomName];
+            }
+            io.to(roomName).emit('playerLeft');
+          }
+        });
+      });
 
 }
 

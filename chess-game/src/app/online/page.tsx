@@ -27,7 +27,7 @@ const Page = (props: Props) => {
         
         let chessGame:Chess = new Chess(response.game.game);
         SetGameDetails(chessGame);
-        SetGameId(response.game._id);
+        SetGameId(response.roomName);
         SetGameStarted(true);
       } else {
         console.error(`Game creation failed: ${response.message}`);
