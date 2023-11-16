@@ -82,6 +82,7 @@ function connection(socket) {
             const updatedGame = await GameModel.updateGameById(gameId, game);
 
             // Notify both players about the move
+            console.log("updated game", updatedGame);
             io.to(gameId).emit('move-made', {
                 success: true,
                 message: 'Move successful',

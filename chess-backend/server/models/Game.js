@@ -53,8 +53,8 @@ GameSchema.statics.getGameById = async function (id) {
 }
 GameSchema.statics.updateGameById = async function (id, game) {
     try {
-        console.log("recieve updatedgame", game);
-        const obj = this.findOneAndUpdate({_id: id}, {game: game,LastPlayed: game.LastPlayed==='white'?'black':'white'});
+        console.log("recieved update req", game);
+        const obj = await this.findOneAndUpdate({_id: id}, {game: game,LastPlayed: game.LastPlayed==='white'?'black':'white'},{new:true});
         return obj;
     } catch (error) {
         throw error;
@@ -62,7 +62,8 @@ GameSchema.statics.updateGameById = async function (id, game) {
 }
 GameSchema.statics.joinGame = async function (id, player) {
     try{
-        const obj = this.findOneAndUpdate({_id: id}, {BlackPlayer: player, BlackPlayerId: uuidv4()});
+        console.log("joined in schema fundtion", player);
+        const obj = await this.findOneAndUpdate({_id: id}, {BlackPlayer: player, BlackPlayerId: uuidv4()},{new:true});
         return obj;
     }
     catch(error){

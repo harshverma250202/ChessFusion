@@ -77,7 +77,7 @@ const Page = (props: Props) => {
       console.log("Received 'player-joined' event:", response);
       console.log("Player joined");
       if (response.success) {
-        SetGameDetails(response.game.game);
+        SetGameDetails(response.game);
         SetGameId(response.game._id);
         SetGameStarted(true);
         SetBothPlayerJoined(true);
@@ -118,10 +118,10 @@ const Page = (props: Props) => {
       )}
       {bothPlayerJoined && (
         <>
-          <p>Game Id: {gameId}</p>
-          <p>{currentPlayerIsWhite? <p>your are white</p>:<p>you are black</p>}</p>
+          <p className="text-center mb-4">Game Id: {gameId}</p>
+          <p>{currentPlayerIsWhite? <p className="text-center mb-4">your are white</p>:<p className="text-center mb-4">you are black</p>}</p>
           <div className="md:flex m-5 justify-center flex-col items-center">
-            <h1 className="text-2xl mb-4">One vs One</h1>
+            <h1 className="text-2xl mb-4">online game</h1>
             <div className="flex justify-between w-full mb-4">
               <div className="flex items-center">
                 <i className="fas fa-chess-king mr-2"></i>
