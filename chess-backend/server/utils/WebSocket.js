@@ -4,21 +4,26 @@ import GameModel from '../models/Game.js';
 
 function connection(socket) {
     const MAX_ROOM_SIZE = 2;
-    const rooms = {};
-
+    function getAvailableRooms() {
+        const adapter = io.of('/').adapter;
+        const rooms = adapter.rooms;
+        console.log("getAvailableRooms room", rooms);
+        return rooms;
+    }
 
 
     socket.on('create-game', async ({ name, game }) => {
         try {
             const newGame = await GameModel.createGame(name, game);
             // Join a room
-            socket.join(newGame._id);
-            rooms[roomName] = [socket.id];
+            let roomName = newGame._id.toString();
+            socket.join(roomName);
+            console.log("all rooms", getAvailableRooms());
             // Emitting JSON to the client
             socket.emit('game-created', {
                 success: true,
                 message: 'Game successfully created',
-                roomName: newGame._id,
+                roomName: roomName,
                 game: newGame
             });
         } catch (error) {
@@ -35,34 +40,35 @@ function connection(socket) {
 
 
     // When a player tries to join a game
+    // Inside the 'join-game' event handler
     socket.on('join-game', async ({ gameId, name }) => {
         try {
             const game = await GameModel.joinGame(gameId, name);
             console.log("Game Found while joining", game);
-            const roomName = game._id;
-            const room = rooms[roomName];
-            // Join the game room
-            if (room && room.length < MAX_ROOM_SIZE) {
+            const roomName = game._id.toString();
+            const rooms = getAvailableRooms();
+            console.log("room", rooms);
+            const room = rooms.get(roomName);
+            console.log("room", room);
+
+            if (room && room.size < MAX_ROOM_SIZE) {
                 socket.join(roomName);
-                room.push(socket.id);
                 console.log(`Player joined room: ${roomName}`);
-                socket.to(roomName).emit('player-joined', {
+                io.to(roomName).emit('player-joined', {
                     success: true,
                     message: 'Player joined successfully',
                     roomName: roomName,
                     game
                 });
-              } else {
+            } else {
                 socket.emit('roomFull');
-              }
-            // Notify others in the room that a player has joined
-            
-
+                console.log(`Room ${roomName} is full`);
+            }
         } catch (error) {
             console.log(error);
 
             // Emit an error message to the client
-            socket.emit('player-joined', {
+            io.to(roomName).emit('player-joined', {
                 success: false,
                 message: 'Failed to join game',
                 error: error.message
@@ -71,54 +77,37 @@ function connection(socket) {
     });
 
     // When a player makes a move
-    socket.on('move', async ({ gameId, game }) => {
+    socket.on('make-move', async ({ gameId, game,played }) => {
         try {
             const updatedGame = await GameModel.updateGameById(gameId, game);
 
             // Notify both players about the move
-            socket.to(updatedGame.WhitePlayerId).emit('move', {
+            io.to(gameId).emit('move-made', {
                 success: true,
                 message: 'Move successful',
-                game: updatedGame
-            });
-            socket.to(updatedGame.BlackPlayerId).emit('move', {
-                success: true,
-                message: 'Move successful',
-                game: updatedGame
+                game: game,
+                lastPlayed: played,
             });
 
         } catch (error) {
             console.log(error);
-
+            
             // Emit an error message to both players
-            socket.to(updatedGame.WhitePlayerId).emit('move', {
+            io.to(gameId).emit('move-made', {
                 success: false,
                 message: 'Move failed',
                 error: error.message
             });
-            socket.to(updatedGame.BlackPlayerId).emit('move', {
-                success: false,
-                message: 'Move failed',
-                error: error.message
-            });
+
         }
     });
 
     socket.on('disconnect', () => {
         console.log('user disconnected');
-    
+
         // Remove the disconnected player from the room
-        Object.keys(rooms).forEach((roomName) => {
-          const index = rooms[roomName].indexOf(socket.id);
-          if (index !== -1) {
-            rooms[roomName].splice(index, 1);
-            if (rooms[roomName].length === 0) {
-              delete rooms[roomName];
-            }
-            io.to(roomName).emit('playerLeft');
-          }
-        });
-      });
+
+    });
 
 }
 

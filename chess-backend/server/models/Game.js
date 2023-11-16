@@ -14,7 +14,7 @@ const GameSchema = new mongoose.Schema(
         LastPlayed: {
             type:String,
             // only black or white  
-            enum: ['white', 'black','start'],
+            enum: ['white', 'black',],
         }
         
     },
@@ -31,7 +31,7 @@ GameSchema.statics.createGame = async function (
             WhitePlayer: initiator,
             WhitePlayerId: uuidv4(),
             game: game,
-            LastPlayed: 'start'
+            LastPlayed: 'black'
         });
         const savedGame = await newGame.save();
         console.log("game created", savedGame)
@@ -53,6 +53,7 @@ GameSchema.statics.getGameById = async function (id) {
 }
 GameSchema.statics.updateGameById = async function (id, game) {
     try {
+        console.log("recieve updatedgame", game);
         const obj = this.findOneAndUpdate({_id: id}, {game: game,LastPlayed: game.LastPlayed==='white'?'black':'white'});
         return obj;
     } catch (error) {
