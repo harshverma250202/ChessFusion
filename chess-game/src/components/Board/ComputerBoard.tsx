@@ -33,6 +33,12 @@ export default function PlayRandomMoveEngine() {
     }
     return false;
   }
+  function checkGameOverInMinMax() {
+    if (game.isCheckmate() || game.isDraw() || game.isStalemate()) {
+      return true;
+    }
+    return false;
+  }
 
   function makeAMove(move: chessjs.Move | string): chessjs.Move | null {
     const gameCopy = new Chess(game.fen()); // Copy the game state
@@ -111,11 +117,12 @@ const evaluateBoard = (fen: string): number => {
   
   // Minimax function with alpha-beta pruning
 const minimax = (depth: number, maximizingPlayer: boolean, alpha: number, beta: number, game: any) => {
-  if (depth === 0 || checkGameOver()) {
+  if (depth === 0 || checkGameOverInMinMax()) {
     return evaluateBoard(game.fen());
   }
 
   const possibleMoves = game.moves();
+  possibleMoves.sort(() => 0.5 - Math.random()); // Randomize the moves to get different possible moves each time
 
   if (maximizingPlayer) {
     let maxEval = -Infinity;
@@ -156,6 +163,7 @@ const makeBestMove = (depth: number, game: any) => {
   let bestEval = -Infinity;
 
   const possibleMoves = game.moves();
+  possibleMoves.sort(() => 0.5 - Math.random()); // Randomize the moves to get different possible moves each time
 
   for (const move of possibleMoves) {
     game.move(move);
@@ -176,7 +184,7 @@ function makeBestMoveWrapper() {
   const possibleMoves = game.moves();
   if (checkGameOver()|| possibleMoves.length === 0) return;
 
-  makeBestMove(3, game); // You can adjust the depth according to your requirements
+  makeBestMove(4, game); // You can adjust the depth according to your requirements
   setIsWhiteNext(!isWhiteNext);
 }
 
