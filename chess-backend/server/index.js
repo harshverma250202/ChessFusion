@@ -11,7 +11,7 @@ import connection from "./utils/WebSocket.js"
 const app = express();
 
 /** Get port from environment and store in Express. */
-const port = process.env.PORT || "5000";
+const port = process.env.PORT || "5020";
 app.set("port", port);
 
 app.use(logger("dev"));
